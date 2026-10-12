@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>KANO LIFE — Your Life. Your City. Your Story.</title>
+<style>
+:root{--gold:#f4b942;--ink:#101820;--panel:rgba(12,20,26,.92);--mint:#9ce6c3}
+*{box-sizing:border-box} body{margin:0;background:#101820;color:#f7f5ef;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+button,input{font:inherit} button{cursor:pointer;border:0;border-radius:10px;padding:10px 13px;font-weight:800;background:var(--gold);color:#18202a}
+button.secondary{background:#283943;color:#f7f5ef;border:1px solid #52626a}
+#game{display:block;width:100vw;height:100vh;touch-action:none}
+#hud{position:fixed;inset:0;pointer-events:none}
+.topbar{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.brand,.stats,.mission{background:var(--panel);border:1px solid #35464d;border-radius:14px;padding:10px 13px;box-shadow:0 8px 24px #0004}
+.brand strong{display:block;letter-spacing:1.5px;color:var(--gold);font-size:18px}.brand small{color:#b7c5c8}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}.stats b{color:var(--mint)}
+.actions{position:absolute;right:12px;top:102px;display:grid;gap:8px;pointer-events:auto}
+.actions button{min-width:118px;box-shadow:0 6px 18px #0005}
+.mission{position:absolute;left:12px;bottom:12px;max-width:min(410px,calc(100vw - 24px));font-size:13px;line-height:1.4}
+.mission b{color:var(--gold)} .toast{position:absolute;top:90px;left:50%;transform:translateX(-50%);background:#12242c;border:1px solid #57706e;padding:10px 15px;border-radius:12px;opacity:0;transition:opacity .2s;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+#startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#111d24ed,#1a3a37e8),radial-gradient(circle at 80% 20%,#6c5b2d,transparent 40%);padding:20px;z-index:5}
+.card{width:min(560px,100%);background:#101a20;border:1px solid #53635d;border-radius:24px;padding:28px;box-shadow:0 24px 80px #0008}
+.logo{font-size:clamp(34px,8vw,58px);font-weight:1000;letter-spacing:2px;line-height:1;color:var(--gold);text-shadow:0 4px 0 #7e4b12}
+.tag{margin:10px 0 22px;color:#c3d0cc}.card p{color:#c7d0d1;line-height:1.5}.card label{display:block;font-size:13px;color:#b7c5c8;margin:14px 0 6px}
+.card input{width:100%;padding:13px;border-radius:10px;background:#1c2b31;border:1px solid #53635d;color:white}
+.startrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.startrow button{flex:1}
+.credit{margin-top:18px;font-size:12px;color:#839694}
+#modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:4}
+#modal .card{width:min(480px,100%)} #modal h2{margin-top:0;color:var(--gold)}
+.modal-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.modal-buttons button{flex:1}
+#touchControls{position:fixed;left:12px;bottom:115px;display:none;gap:7px;pointer-events:auto}
+#touchControls button{width:48px;height:48px;padding:0;background:#15262dcc;color:#fff;border:1px solid #81908b;font-size:20px}
+#touchControls .pad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,48px);gap:5px}
+#touchControls button[data-dir="up"]{grid-column:2}
+#touchControls button[data-dir="left"]{grid-column:1;grid-row:2}
+#touchControls button[data-dir="down"]{grid-column:2;grid-row:2}
+#touchControls button[data-dir="right"]{grid-column:3;grid-row:2}
+@media(max-width:700px){.stats{gap:8px;font-size:11px;padding:8px}.brand{padding:8px 10px}.brand strong{font-size:15px}.brand small{font-size:10px}.actions{top:105px;right:10px}.actions button{min-width:98px;padding:9px;font-size:12px}.mission{font-size:11px;bottom:10px}.topbar{gap:6px}#touchControls{display:block}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="KANO LIFE game world"></canvas>
+<div id="hud">
+  <div class="topbar">
+    <div class="brand"><strong>KANO LIFE</strong><small>Your Life. Your City. Your Story.</small></div>
+    <div class="stats">
+      <span>👤 <b id="playerName">Player</b></span>
+      <span>💵 <b id="cash">₦50,000</b></span>
+      <span>🏠 <b id="home">No home</b></span>
+      <span>⭐ <b id="rep">0</b> rep</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="jobBtn">💼 Find work</button>
+    <button id="homeBtn">🏠 Housing</button>
+    <button id="shopBtn">🛒 Market</button>
+    <button id="vehicleBtn">🚗 Vehicles</button>
+    <button id="saveBtn" class="secondary">💾 Save game</button>
+  </div>
+  <div class="mission"><b>YOUR NEXT MOVE</b><div id="missionText">Explore Kano and find your first job. Use WASD or arrow keys to move. Walk near a location and press E to interact.</div><div style="color:#a9bab9;margin-top:5px">Move: WASD / arrows · Interact: E · Map: explore the streets</div></div>
+  <div class="toast" id="toast"></div>
+</div>
+<div id="touchControls"><div class="pad">
+  <button data-dir="up">▲</button><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button>
+</div></div>
+<div id="startScreen">
+  <div class="card">
+    <div class="logo">KANO LIFE</div>
+    <div class="tag">Your Life. Your City. Your Story.</div>
+    <p>Build your future in a living, Kano-inspired city. Work, earn virtual naira, find a home, shop at the market, and explore the streets. This is an early playable prototype.</p>
+    <label for="nameInput">What should we call your character?</label>
+    <input id="nameInput" maxlength="18" placeholder="Enter your character name" value="Umar">
+    <div class="startrow"><button id="playBtn">Start your life →</button><button class="secondary" id="continueBtn">Continue saved game</button></div>
+    <div class="credit">Created by <b>Umar Abubakar Faruk</b> · Game Developer</div>
+  </div>
+</div>
+<div id="modal"><div class="card"><h2 id="modalTitle">Welcome</h2><div id="modalBody"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
+<script>
+(() => {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const WORLD={w:2200,h:1600};
+let player={x:1080,y:810,name:'Umar',cash:50000,home:false,rep:0,job:null,vehicle:false};
+let camera={x:0,y:0},keys={},lastTime=0,started=false,toastTimer;
+const places=[
+ {id:'market',name:'Kurmi Market',x:500,y:390,w:300,h:170,type:'market',color:'#c17a42',desc:'A busy market inspired by Kano trading streets.'},
+ {id:'job',name:'Work & Transport Office',x:1350,y:330,w:250,h:145,type:'job',color:'#527f73',desc:'Find honest work and earn virtual naira.'},
+ {id:'homes',name:'Sabon Gari Homes',x:350,y:1050,w:300,h:190,type:'homes',color:'#b58b56',desc:'Find a place to call home.'},
+ {id:'garage',name:'Motor Park & Garage',x:1480,y:1050,w:300,h:175,type:'garage',color:'#687c8a',desc:'Browse rides and transport jobs.'},
+ {id:'museum',name:'Heritage Square',x:950,y:250,w:270,h:140,type:'museum',color:'#9c925e',desc:'A cultural landmark inspired by Kano heritage.'},
+ {id:'cafe',name:'Tea & Snacks',x:930,y:1180,w:230,h:135,type:'cafe',color:'#7e9c62',desc:'Take a break and boost your energy.'}
+];
+function money(n){return '₦'+Math.max(0,Math.floor(n)).toLocaleString('en-NG')}
+function sync(){document.getElementById('playerName').textContent=player.name;document.getElementById('cash').textContent=money(player.cash);document.getElementById('home').textContent=player.home?'Rented':'No home';document.getElementById('rep').textContent=player.rep}
+function say(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500)}
+function save(){localStorage.setItem('kanoLifeSave',JSON.stringify(player));say('Game saved on this device.')}
+function load(){try{const s=JSON.parse(localStorage.getItem('kanoLifeSave'));if(s&&s.name){player={...player,...s};sync();return true}}catch(e){}return false}
+function modal(title,body,buttons){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;const box=document.getElementById('modalButtons');box.innerHTML='';buttons.forEach(b=>{const el=document.createElement('button');el.textContent=b.label;if(b.secondary)el.className='secondary';el.onclick=()=>{document.getElementById('modal').style.display='none';b.action&&b.action()};box.appendChild(el)});document.getElementById('modal').style.display='flex'}
+function nearPlace(){return places.find(p=>player.x>p.x-30&&player.x<p.x+p.w+30&&player.y>p.y-30&&player.y<p.y+p.h+30)}
+function interact(p=nearPlace()){if(!p){say('Walk closer to a building, then press E.');return}
+ if(p.id==='job')modal('Work & Transport Office',`<p>Choose a starter job. Complete a shift to earn virtual naira and reputation.</p><p><b>Delivery rider:</b> ₦8,000 per shift<br><b>Shop assistant:</b> ₦6,000 per shift<br><b>Taxi driver:</b> ₦10,000 per shift${player.vehicle?'':' (vehicle rental included)'}</p>`,[
+ {label:'Delivery shift +₦8,000',action:()=>work(8000,'Delivery rider')},{label:'Shop shift +₦6,000',action:()=>work(6000,'Shop assistant')},{label:'Taxi shift +₦10,000',action:()=>work(10000,'Taxi driver')},{label:'Close',secondary:true}
+ ]);
+ else if(p.id==='homes')modal('Sabon Gari Homes',`<p>Find a place to rest and make this city feel like home.</p><p><b>Rent a small apartment:</b> ₦25,000</p><p>${player.home?'You already have a rented home.':'Your wallet: '+money(player.cash)}</p>`,[{label:player.home?'Already rented':'Rent for ₦25,000',action:()=>{if(player.home){say('You already have a home.');return}if(player.cash<25000){say('Not enough money yet. Try a work shift.');return}player.cash-=25000;player.home=true;player.rep+=2;sync();say('Home rented! You have a place to stay.');save()}},{label:'Close',secondary:true}]);
+ else if(p.id==='market')modal('Kurmi Market',`<p>Buy supplies from the market. Your choices are virtual and do not use real money.</p><p><b>Food basket:</b> ₦2,000 · <b>Clothing:</b> ₦5,000 · <b>Phone:</b> ₦12,000</p>`,[{label:'Buy food ₦2,000',action:()=>buy(2000,'Food basket')},{label:'Buy clothes ₦5,000',action:()=>buy(5000,'Clothing')},{label:'Buy phone ₦12,000',action:()=>buy(12000,'Phone')},{label:'Close',secondary:true}]);
+ else if(p.id==='garage')modal('Motor Park & Garage',`<p>Buy a starter motorcycle to unlock transport missions.</p><p><b>Motorcycle:</b> ₦35,000</p><p>${player.vehicle?'You own a motorcycle.':'Wallet: '+money(player.cash)}</p>`,[{label:player.vehicle?'Already owned':'Buy motorcycle ₦35,000',action:()=>{if(player.vehicle){say('You already own a motorcycle.');return}if(player.cash<35000){say('Not enough money. Work a few shifts first.');return}player.cash-=35000;player.vehicle=true;player.rep+=3;sync();say('Motorcycle purchased!');save()}},{label:'Close',secondary:true}]);
+ else if(p.id==='museum')modal('Heritage Square',`<p>A peaceful cultural square inspired by Kano's long history. Explore, learn, and build your reputation.</p><p>Spend a little time here to earn 1 reputation point.</p>`,[{label:'Explore (+1 rep)',action:()=>{player.rep++;sync();say('You explored Heritage Square. +1 reputation.');save()}},{label:'Close',secondary:true}]);
+ else if(p.id==='cafe')modal('Tea & Snacks',`<p>Take a break and grab a snack.</p><p><b>Tea and snacks:</b> ₦1,000</p>`,[{label:'Take a break ₦1,000',action:()=>buy(1000,'Tea and snacks')},{label:'Close',secondary:true}]);
+}
+function work(amount,job){player.cash+=amount;player.rep+=1;player.job=job;sync();say(`${job} complete! You earned ${money(amount)}.`);save()}
+function buy(cost,item){if(player.cash<cost){say('Not enough money. Find work first.');return}player.cash-=cost;player.rep+=1;sync();say(`${item} purchased. -${money(cost)}`);save()}
+function roundedRect(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
+function drawBuilding(p){ctx.fillStyle='#0003';ctx.fillRect(p.x+8,p.y+10,p.w,p.h);roundedRect(p.x,p.y,p.w,p.h,10,p.color,'#17262b');ctx.fillStyle='#e9d6aa';ctx.fillRect(p.x+14,p.y+14,p.w-28,10);ctx.fillStyle='#18262b';ctx.fillRect(p.x+p.w*.42,p.y+p.h-42,35,42);for(let x=p.x+22;x<p.x+p.w-20;x+=52){ctx.fillStyle='#d7e4d7';ctx.fillRect(x,p.y+42,25,23)}ctx.fillStyle='#fff5d8';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText(p.name,p.x+p.w/2,p.y+p.h+20)}
+function drawWorld(){
+ ctx.fillStyle='#b7b18b';ctx.fillRect(0,0,WORLD.w,WORLD.h);
+ // city blocks and sandy lots
+ for(let y=0;y<WORLD.h;y+=115){for(let x=0;x<WORLD.w;x+=135){ctx.fillStyle=((x+y)/115%2<1)?'#b8b18c':'#b1aa83';ctx.fillRect(x,y,125,105);ctx.fillStyle='#c6bc96';ctx.fillRect(x+8,y+8,35,20)}}
+ // roads
+ ctx.fillStyle='#4a5353';ctx.fillRect(0,650,WORLD.w,100);ctx.fillRect(850,0,95,WORLD.h);ctx.fillRect(0,900,WORLD.w,72);ctx.fillRect(1180,0,65,WORLD.h);
+ ctx.strokeStyle='#d9cda2';ctx.lineWidth=3;ctx.setLineDash([18,18]);ctx.beginPath();ctx.moveTo(0,700);ctx.lineTo(WORLD.w,700);ctx.moveTo(895,0);ctx.lineTo(895,WORLD.h);ctx.moveTo(0,936);ctx.lineTo(WORLD.w,936);ctx.stroke();ctx.setLineDash([]);
+ // roadside palms / shrubs
+ for(let i=0;i<35;i++){const x=(i*173+75)%WORLD.w,y=(i*251+120)%WORLD.h;if(Math.abs(y-700)>80&&Math.abs(y-936)>65&&Math.abs(x-895)>80&&Math.abs(x-1212)>55){ctx.fillStyle='#6d7d48';ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8c855c';ctx.fillRect(x-3,y+5,6,15)}}
+ places.forEach(drawBuilding);
+ // parked cars
+ for(let i=0;i<9;i++){const x=150+i*210,y=i%2?625:760;roundedRect(x,y,52,25,5,i%2?'#b95140':'#e2d9b8','#283537');ctx.fillStyle='#8eb0b4';ctx.fillRect(x+8,y+4,13,8);ctx.fillRect(x+30,y+4,13,8)}
+ // small stalls
+ for(let i=0;i<10;i++){const x=300+i*40,y=570;ctx.fillStyle=['#d55f3e','#e1b548','#527d72'][i%3];ctx.fillRect(x,y,30,24);ctx.fillStyle='#514638';ctx.fillRect(x+3,y+24,24,16)}
+}
+function drawPlayer(){ctx.save();ctx.translate(player.x,player.y);ctx.fillStyle='#0004';ctx.beginPath();ctx.ellipse(0,11,13,7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#244f6a';ctx.beginPath();ctx.roundRect(-10,-6,20,24,6);ctx.fill();ctx.fillStyle='#9c5e37';ctx.beginPath();ctx.arc(0,-13,9,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f2dfbd';ctx.fillRect(-8,-23,16,4);ctx.fillStyle='#fff';ctx.fillRect(-5,-15,3,3);ctx.fillRect(3,-15,3,3);ctx.restore()}
+function drawMiniMap(){const mw=128,mh=92,x=W-mw-14,y=H-mh-14;roundedRect(x,y,mw,mh,9,'#132126dd','#65716a');ctx.save();ctx.beginPath();ctx.roundRect(x+5,y+5,mw-10,mh-10,6);ctx.clip();ctx.fillStyle='#b7b18b';ctx.fillRect(x+5,y+5,mw-10,mh-10);ctx.fillStyle='#4a5353';ctx.fillRect(x+5,y+5+645/WORLD.h*(mh-10),mw-10,6);ctx.fillRect(x+5+850/WORLD.w*(mw-10),y+5,6,mh-10);places.forEach(p=>{ctx.fillStyle=p.color;ctx.fillRect(x+5+p.x/WORLD.w*(mw-10),y+5+p.y/WORLD.h*(mh-10),Math.max(3,p.w/WORLD.w*(mw-10)),Math.max(3,p.h/WORLD.h*(mh-10)))});ctx.fillStyle='#ffe18c';ctx.beginPath();ctx.arc(x+5+player.x/WORLD.w*(mw-10),y+5+player.y/WORLD.h*(mh-10),4,0,Math.PI*2);ctx.fill();ctx.restore()}
+function drawPrompt(){const p=nearPlace();if(!p)return;const sx=p.x-camera.x+p.w/2,sy=p.y-camera.y-8;ctx.fillStyle='#14242be8';ctx.beginPath();ctx.roundRect(sx-85,sy-27,170,23,7);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('Press E · '+p.name,sx,sy-12)}
+function loop(t){const dt=Math.min((t-lastTime)/16.67||1,2);lastTime=t;if(started){let dx=0,dy=0;if(keys.ArrowUp||keys.w||keys.W)dy-=1;if(keys.ArrowDown||keys.s||keys.S)dy+=1;if(keys.ArrowLeft||keys.a||keys.A)dx-=1;if(keys.ArrowRight||keys.d||keys.D)dx+=1;if(dx&&dy){dx*=.707;dy*=.707}const speed=3.2;player.x=Math.max(18,Math.min(WORLD.w-18,player.x+dx*speed*dt));player.y=Math.max(18,Math.min(WORLD.h-18,player.y+dy*speed*dt));camera.x=Math.max(0,Math.min(WORLD.w-W,(player.x-W/2)));camera.y=Math.max(0,Math.min(WORLD.h-H,(player.y-H/2)));if(!player.home)document.getElementById('missionText').textContent=player.rep<1?'Explore the city, visit the Work & Transport Office, and earn your first virtual naira.':'Earn ₦25,000 to rent a home in Sabon Gari.';else if(!player.vehicle)document.getElementById('missionText').textContent='You have a home! Keep working and save ₦35,000 for a motorcycle.';else document.getElementById('missionText').textContent='You are building your life in Kano. Explore, work, shop, and increase your reputation.'}
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(-camera.x,-camera.y);drawWorld();drawPlayer();ctx.restore();if(started){drawPrompt();drawMiniMap()}requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+function start(name){player.name=(name||'Player').trim().slice(0,18)||'Player';started=true;document.getElementById('startScreen').style.display='none';sync();say('Welcome to Kano! Explore and build your life.')}
+document.getElementById('playBtn').onclick=()=>start(document.getElementById('nameInput').value);
+document.getElementById('continueBtn').onclick=()=>{if(load()){started=true;document.getElementById('startScreen').style.display='none';sync();say('Welcome back, '+player.name+'!')}else say('No saved game found on this device yet.')};
+document.getElementById('jobBtn').onclick=()=>interact(places.find(p=>p.id==='job'));
+document.getElementById('homeBtn').onclick=()=>interact(places.find(p=>p.id==='homes'));
+document.getElementById('shopBtn').onclick=()=>interact(places.find(p=>p.id==='market'));
+document.getElementById('vehicleBtn').onclick=()=>interact(places.find(p=>p.id==='garage'));
+document.getElementById('saveBtn').onclick=save;
+addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='e'||e.key==='E')interact();if(e.key==='Escape')document.getElementById('modal').style.display='none'});
+addEventListener('keyup',e=>keys[e.key]=false);
+document.querySelectorAll('#touchControls button').forEach(btn=>{const dir=btn.dataset.dir,map={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'};const k=map[dir];btn.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>btn.addEventListener(ev,()=>keys[k]=false))});
+sync();
+})();
+</script>
+</body>
+</html>
